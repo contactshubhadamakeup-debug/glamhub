@@ -1,0 +1,43 @@
+# Cloud Build Pipeline Configuration
+
+steps:
+  # Install dependencies and run tests
+  - name: 'node:18'
+    entrypoint: 'npm'
+    args: ['ci']
+    dir: 'api'
+  
+  - name: 'node:18'
+    entrypoint: 'npm'
+    args: ['test']
+    dir: 'api'
+  
+  # Build API container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '$_REGION-docker.pkg.dev/$PROJECT_ID/glamhub-repo/api:$COMMIT_SHA', './api']
+  
+  # Push API container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '$_REGION-docker.pkg.dev/$PROJECT_ID/glamhub-repo/api:$COMMIT_SHA']
+  
+  # Deploy API to Cloud Run
+  - name: 'gcr.io/google/cloud-cli'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'api'
+      - '--image'
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/glamhub-repo/api:$COMMIT_SHA'
+      - '--platform'
+      - 'managed'
+      - '--region'
+      - '$_REGION'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'DATABASE_URL=$_DATABASE_URL,JWT_SECRET=$_JWT_SECRET,FIREBASE_SERVICE_ACCOUNT=$_FIREBASE_SA'
+      - '--project'
+      - '$PROJECT_ID'
+
+substitutions:
+  _REGION: asia-south1
