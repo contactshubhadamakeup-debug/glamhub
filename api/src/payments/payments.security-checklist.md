@@ -1,5 +1,7 @@
-// src/payments/payments.security-checklist.md
 # Payments Security Checklist
+
+## Payment Gateway
+- **Selected:** Razorpay (India-first, UPI/netbanking/wallets, T+2 settlement)
 
 ## Test Mode
 - [x] All payment integrations use test mode only
@@ -7,7 +9,7 @@
 - [x] Real keys added by owner into Secret Manager only
 
 ## Webhook Security
-- [x] Webhook signature verification required (implement in middleware)
+- [x] Webhook signature verification required (implemented in middleware)
 - [x] Idempotent webhook handling (gatewayPaymentId unique constraint)
 - [x] Webhook returns 200 even on error to prevent retries
 
@@ -23,7 +25,6 @@
 - [x] Price change requires confirmation
 
 ## Open High-Severity Items
-- [ ] Webhook signature verification middleware needs implementation
-- [ ] Razorpay/Stripe SDK integration needs completion
+- [ ] Razorpay SDK integration needs completion (hosted checkout, webhooks, subscriptions)
 
-**Status:** 2 open items (webhook verification, gateway SDK integration)
+**Status:** 1 open item (Razorpay SDK integration)
