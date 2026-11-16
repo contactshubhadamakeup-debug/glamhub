@@ -9,6 +9,10 @@ import { ClientsModule } from './clients/clients.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { PortfolioModule } from './portfolio/portfolio.module';
+import { SearchModule } from './search/search.module';
+import { EnquiriesModule } from './enquiries/enquiries.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -21,6 +25,10 @@ import { InvoicesModule } from './invoices/invoices.module';
     BookingsModule,
     QuotesModule,
     InvoicesModule,
+    PortfolioModule,
+    SearchModule,
+    EnquiriesModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}
