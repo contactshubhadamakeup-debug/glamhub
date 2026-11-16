@@ -17,6 +17,8 @@ import { PlansModule } from './plans/plans.module';
 import { CouponsModule } from './coupons/coupons.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
+import { AiModule } from './ai/ai.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { AdminModule } from './admin/admin.module';
     CouponsModule,
     PaymentsModule,
     AdminModule,
+    AiModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
