@@ -13,6 +13,10 @@ import { PortfolioModule } from './portfolio/portfolio.module';
 import { SearchModule } from './search/search.module';
 import { EnquiriesModule } from './enquiries/enquiries.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { PlansModule } from './plans/plans.module';
+import { CouponsModule } from './coupons/coupons.module';
+import { PaymentsModule } from './payments/payments.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -29,6 +33,10 @@ import { ReviewsModule } from './reviews/reviews.module';
     SearchModule,
     EnquiriesModule,
     ReviewsModule,
+    PlansModule,
+    CouponsModule,
+    PaymentsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
