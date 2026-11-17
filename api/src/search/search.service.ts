@@ -54,7 +54,7 @@ export class SearchService {
       this.prisma.professionalProfile.count({ where }),
     ]);
 
-    const results: SearchResult[] = professionals.map((p) => ({
+    const results: SearchResult[] = professionals.map((p: { id: string; businessName: string; category: string; city: string; rating: number; totalReviews: number; portfolioItems: Array<{ imageUrl: string }> }) => ({
       id: p.id,
       businessName: p.businessName,
       category: p.category,
@@ -80,6 +80,6 @@ export class SearchService {
       select: { city: true },
       distinct: ['city'],
     });
-    return cities.map((c) => c.city).sort();
+    return cities.map((c: { city: string }) => c.city).sort();
   }
 }

@@ -1,0 +1,583 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN_STAFF
+  PROFESSIONAL
+  STUDIO_OWNER
+  CLIENT
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PlanInterval {
+  MONTH
+  YEAR
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  phone         String?   @unique
+  passwordHash  String?
+  firebaseUid   String?   @unique
+  role          Role      @default(CLIENT)
+  isEmailVerified Boolean  @default(false)
+  isPhoneVerified  Boolean @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  professionalProfile ProfessionalProfile?
+  studioOwner         StudioOwner?
+  clients             Client[]
+  roleAssignments     RoleAssignment[]
+  auditLogs           AuditLog[] @relation("AuditLogActor")
+  notifications       Notification[] @relation("UserNotifications")
+  couponUsages        CouponUsage[]
+
+  @@index([email])
+  @@index([role])
+  @@index([deletedAt])
+}
+
+model RoleAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  role      Role
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([role])
+}
+
+model ProfessionalProfile {
+  id                String      @id @default(uuid())
+  userId            String      @unique
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName      String
+  category          String
+  city              String
+  bio               String?
+  phone             String?
+  website           String?
+  instagramHandle   String?
+  isApproved        Boolean     @default(false)
+  isSuspended       Boolean     @default(false)
+  isVerified        Boolean     @default(false)
+  rating            Float       @default(0)
+  totalReviews      Int         @default(0)
+  totalBookings     Int         @default(0)
+  totalRevenue      Float       @default(0)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  deletedAt         DateTime?
+
+  portfolioItems    PortfolioItem[]
+  services          Service[]
+  clients           Client[]
+  leads             Lead[]
+  bookings          Booking[]
+  quotes            Quote[]
+  invoices          Invoice[]
+  payments          Payment[]
+  reviews           Review[]
+  subscriptions     Subscription[]
+  notifications     Notification[] @relation("ProfessionalNotifications")
+  auditLogs         AuditLog[] @relation("AuditLogOwner")
+  professionals     Professional[]
+  reviewReplies     ReviewReply[]
+  disputes          Dispute[]
+
+  @@index([userId])
+  @@index([category])
+  @@index([city])
+  @@index([isApproved])
+  @@index([isSuspended])
+  @@index([deletedAt])
+}
+
+model StudioOwner {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studioName    String
+  city          String
+  isApproved    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  professionals Professional[]
+  @@index([userId])
+  @@index([city])
+  @@index([deletedAt])
+}
+
+model Professional {
+  id             String      @id @default(uuid())
+  studioOwnerId  String
+  studioOwner    StudioOwner @relation(fields: [studioOwnerId], references: [id], onDelete: Cascade)
+  professionalProfileId String
+  professionalProfile ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+
+  @@index([studioOwnerId])
+  @@index([professionalProfileId])
+  @@index([deletedAt])
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  portfolioItems PortfolioItem[]
+  services    Service[]
+  @@index([slug])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+model PortfolioItem {
+  id               String      @id @default(uuid())
+  professionalId   String
+  professional     ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  categoryId       String
+  category         Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title            String
+  description      String?
+  imageUrl         String
+  imageThumbUrl    String?
+  price            Float?
+  durationMinutes  Int?
+  isFeatured       Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  deletedAt        DateTime?
+
+  @@index([professionalId])
+  @@index([categoryId])
+  @@index([isFeatured])
+  @@index([deletedAt])
+}
+
+model Service {
+  id               String   @id @default(uuid())
+  professionalId   String
+  professional     ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  categoryId       String
+  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  price            Float
+  durationMinutes  Int
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+
+  bookings         Booking[]
+  @@index([professionalId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+model Client {
+  id            String   @id @default(uuid())
+  professionalId String
+  professional  ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  email         String
+  phone         String?
+  city          String?
+  totalBookings Int      @default(0)
+  totalSpent    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  bookings      Booking[]
+  quotes        Quote[]
+  invoices      Invoice[]
+  payments      Payment[]
+  reviews       Review[]
+  disputes      Dispute[]
+
+  @@index([professionalId])
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model Lead {
+  id            String      @id @default(uuid())
+  professionalId String
+  professional  ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  clientName    String
+  clientEmail   String
+  clientPhone   String?
+  serviceInterest String?
+  message       String?
+  status        String      @default("new") // new, contacted, quoted, booked, lost
+  score         Int         @default(0) // AI lead score
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  bookings      Booking[]
+  quotes        Quote[]
+
+  @@index([professionalId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Booking {
+  id             String      @id @default(uuid())
+  professionalId String
+  professional   ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId      String?
+  service        Service?    @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  leadId         String?
+  lead           Lead?       @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  startTime      DateTime
+  endTime        DateTime
+  status         BookingStatus @default(PENDING)
+  totalAmount    Float
+  currency       String      @default("INR")
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+
+  reviews        Review[]
+  payments       Payment[]
+  disputes       Dispute[]
+  invoices       Invoice[]
+
+  @@index([professionalId])
+  @@index([clientId])
+  @@index([status])
+  @@index([startTime])
+  @@index([deletedAt])
+}
+
+model Quote {
+  id            String      @id @default(uuid())
+  professionalId String
+  professional  ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  leadId        String?
+  lead          Lead?       @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  title         String
+  description   String?
+  amount        Float
+  currency      String      @default("INR")
+  status        String      @default("draft") // draft, sent, accepted, rejected, expired
+  validUntil    DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  invoices      Invoice[]
+
+  @@index([professionalId])
+  @@index([clientId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  quoteId       String?
+  quote         Quote?   @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  professionalId String
+  professional  ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  bookingId     String?
+  booking       Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  amount        Float
+  currency      String   @default("INR")
+  status        String   @default("unpaid") // unpaid, paid, overdue, cancelled
+  dueDate       DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  payments      Payment[]
+
+  @@index([professionalId])
+  @@index([clientId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Payment {
+  id             String      @id @default(uuid())
+  professionalId String
+  professional   ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  bookingId      String?
+  booking        Booking?    @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  invoiceId      String?
+  invoice        Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  gateway        String      // razorpay or stripe
+  gatewayPaymentId String    @unique
+  amount         Float
+  currency       String      @default("INR")
+  status         PaymentStatus @default(PENDING)
+  gatewayResponse Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+
+  @@index([professionalId])
+  @@index([clientId])
+  @@index([gatewayPaymentId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Review {
+  id             String      @id @default(uuid())
+  professionalId String
+  professional   ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  bookingId      String      @unique
+  booking        Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  rating         Int         // 1-5
+  comment        String?
+  status         ReviewStatus @default(PENDING)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+
+  replies        ReviewReply[]
+
+  @@index([professionalId])
+  @@index([clientId])
+  @@index([bookingId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ReviewReply {
+  id         String   @id @default(uuid())
+  reviewId   String
+  review     Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  reply      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([reviewId])
+  @@index([professionalId])
+}
+
+model Plan {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  price        Float
+  currency     String   @default("INR")
+  interval     PlanInterval @default(MONTH)
+  trialDays    Int      @default(0)
+  clientLimit  Int?     // max clients for professional
+  photoLimit   Int?     // max portfolio photos
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+
+  subscriptions Subscription[]
+  coupons      Coupon[]
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+model Subscription {
+  id             String   @id @default(uuid())
+  professionalId String
+  professional   ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  planId         String
+  plan           Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  status         String   @default("active") // active, past_due, cancelled, expired
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean @default(false)
+  canceledAt     DateTime?
+  trialStart     DateTime?
+  trialEnd       DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  payments       Payment[]
+  coupons        Coupon[]
+
+  @@index([professionalId])
+  @@index([planId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Coupon {
+  id            String   @id @default(uuid())
+  planId        String?
+  plan          Plan?    @relation(fields: [planId], references: [id], onDelete: SetNull)
+  code          String   @unique
+  discountType  String   @default("percentage") // percentage or fixed
+  discountValue Float
+  maxUses       Int?
+  usedCount     Int      @default(0)
+  expiresAt     DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  subscriptions Subscription[]
+  usages        CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+model Promotion {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  discountType String   @default("percentage")
+  discountValue Float
+  startDate    DateTime
+  endDate      DateTime
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+model Dispute {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  reason      String
+  status      String   @default("open") // open, resolved, rejected
+  resolution  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  professionalId String?
+  professional ProfessionalProfile? @relation("ProfessionalNotifications", fields: [professionalId], references: [id], onDelete: Cascade)
+  type        String   // email, whatsapp, in_app
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  deletedAt   DateTime?
+
+  @@index([userId])
+  @@index([professionalId])
+  @@index([isRead])
+  @@index([deletedAt])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?
+  actor        User?    @relation("AuditLogActor", fields: [actorId], references: [id])
+  ownerId      String?
+  owner        ProfessionalProfile? @relation("AuditLogOwner", fields: [ownerId], references: [id])
+  action       String   // create, update, delete, approve, suspend, refund
+  entity       String   // professional, plan, booking, review, etc.
+  entityId     String
+  beforeValues Json?
+  afterValues  Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorId])
+  @@index([ownerId])
+  @@index([entity])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usedAt    DateTime @default(now())
+
+  @@index([couponId])
+  @@index([userId])
+  @@unique([couponId, userId])
+}

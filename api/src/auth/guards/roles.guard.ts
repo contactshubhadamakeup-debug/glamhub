@@ -4,7 +4,6 @@ import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
 
 export const ROLES_KEY = 'roles';
-export const Roles = (...roles: Role[]) => Reflector.createDecorator(ROLES_KEY, roles);
 
 @Injectable()
 export class RolesGuard implements CanActivate {

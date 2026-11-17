@@ -1,5 +1,5 @@
 // src/common/middleware/rate-limit.middleware.ts
-import { Injectable, NestMiddleware, TooManyRequestsException } from '@nestjs/common';
+import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
 interface RateLimitStore {
@@ -8,22 +8,20 @@ interface RateLimitStore {
 
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
-  private store: RateLimitStore = {};
+  private store: Record<string, { count: number; resetAt: number }> = {};
   private readonly windowMs: number;
   private readonly maxRequests: number;
 
   constructor() {
-    this.windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10); // 1 minute default
-    this.maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10); // 100 requests default
-    
-    // Cleanup old entries every 5 minutes
+    this.windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10);
+    this.maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10);
     setInterval(() => this.cleanup(), 5 * 60 * 1000);
   }
 
   use(req: Request, res: Response, next: NextFunction) {
     const key = this.getKey(req);
     const now = Date.now();
-    
+
     if (!this.store[key] || this.store[key].resetAt < now) {
       this.store[key] = { count: 1, resetAt: now + this.windowMs };
     } else {
@@ -38,17 +36,16 @@ export class RateLimitMiddleware implements NestMiddleware {
     res.setHeader('X-RateLimit-Reset', new Date(resetAt).toISOString());
 
     if (this.store[key].count > this.maxRequests) {
-      throw new TooManyRequestsException({
+      throw new HttpException({
         message: 'Too many requests, please try again later',
         retryAfter: Math.ceil((resetAt - now) / 1000),
-      });
+      }, HttpStatus.TOO_MANY_REQUESTS);
     }
 
     next();
   }
 
   private getKey(req: Request): string {
-    // Use IP + path for rate limiting
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     return `${ip}:${req.path}`;
   }

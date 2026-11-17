@@ -21,6 +21,7 @@ import {
   CreatePromotionDto,
   UpdatePromotionDto,
 } from './admin.service';
+import { parsePage, parseLimit } from '../common/utils/pagination.util';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard)
@@ -46,8 +47,8 @@ export class AdminController {
     @Query('status') status?: string,
   ) {
     return this.adminService.getAllProfessionals(
-      parseInt(page) || 1,
-      parseInt(limit) || 20,
+      parsePage(page),
+      parseLimit(limit),
       search,
       status,
     );
@@ -88,8 +89,8 @@ export class AdminController {
     @Query('limit') limit?: string,
   ) {
     return this.adminService.getAllPlans(
-      parseInt(page) || 1,
-      parseInt(limit) || 20,
+      parsePage(page),
+      parseLimit(limit),
     );
   }
 
@@ -112,8 +113,8 @@ export class AdminController {
     @Query('limit') limit?: string,
   ) {
     return this.adminService.getAllCoupons(
-      parseInt(page) || 1,
-      parseInt(limit) || 20,
+      parsePage(page),
+      parseLimit(limit),
     );
   }
 
@@ -126,8 +127,8 @@ export class AdminController {
     @Query('limit') limit?: string,
   ) {
     return this.adminService.getPromotions(
-      parseInt(page) || 1,
-      parseInt(limit) || 20,
+      parsePage(page),
+      parseLimit(limit),
     );
   }
 
@@ -157,8 +158,8 @@ export class AdminController {
     @Query('status') status?: string,
   ) {
     return this.adminService.getAllReviewsForModeration(
-      parseInt(page) || 1,
-      parseInt(limit) || 20,
+      parsePage(page),
+      parseLimit(limit),
       status,
     );
   }
@@ -183,8 +184,8 @@ export class AdminController {
     @Query('status') status?: string,
   ) {
     return this.adminService.getDisputes(
-      parseInt(page) || 1,
-      parseInt(limit) || 20,
+      parsePage(page),
+      parseLimit(limit),
       status,
     );
   }
@@ -208,8 +209,8 @@ export class AdminController {
     @Query('limit') limit?: string,
   ) {
     return this.adminService.getAllPayments(
-      parseInt(page) || 1,
-      parseInt(limit) || 20,
+      parsePage(page),
+      parseLimit(limit),
     );
   }
 
@@ -258,8 +259,8 @@ export class AdminController {
     @Query('actorId') actorId?: string,
   ) {
     return this.adminService.getAuditLog(
-      parseInt(page) || 1,
-      parseInt(limit) || 20,
+      parsePage(page),
+      parseLimit(limit),
       entity,
       actorId,
     );

@@ -80,7 +80,7 @@ export class AiService {
     };
   }
 
-  private generateTemplateReply(dto: DraftReplyDto, lead: any): string {
+  private generateTemplateReply(dto: DraftReplyDto, lead: { clientName: string; professionalId: string | null }): string {
     const serviceRef = dto.serviceInterest ? ` for ${dto.serviceInterest}` : '';
     return `Hello ${lead.clientName},\n\nThank you for your enquiry${serviceRef}. I've received your message and will get back to you shortly with more details.\n\nBest regards,\n${lead.professionalId ? 'Your Professional' : 'The Team'}`;
   }
@@ -166,7 +166,7 @@ export class AiService {
       },
     });
 
-    return quotes.map((q) => {
+    return quotes.map((q: { id: string; client: { name: string }; createdAt: Date }) => {
       const daysSinceQuote = Math.floor(
         (Date.now() - q.createdAt.getTime()) / (1000 * 60 * 60 * 24),
       );
@@ -221,13 +221,13 @@ export class AiService {
     });
 
     const totalBookings = bookings.length;
-    const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
-    const convertedLeads = leads.filter((l) => l.status === 'booked').length;
+    const totalRevenue = payments.reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
+    const convertedLeads = leads.filter((l: { status: string }) => l.status === 'booked').length;
     const leadConversionRate = leads.length > 0 ? (convertedLeads / leads.length) * 100 : 0;
 
     // Client retention: clients with more than one booking
     const clientBookingCounts = new Map<string, number>();
-    bookings.forEach((b) => {
+    bookings.forEach((b: { clientId: string }) => {
       clientBookingCounts.set(b.clientId, (clientBookingCounts.get(b.clientId) || 0) + 1);
     });
     const repeatClients = Array.from(clientBookingCounts.values()).filter((c) => c > 1).length;
@@ -241,7 +241,7 @@ export class AiService {
       date.setDate(now.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       const count = bookings.filter(
-        (b) => b.createdAt.toISOString().split('T')[0] === dateStr,
+        (b: { createdAt: Date }) => b.createdAt.toISOString().split('T')[0] === dateStr,
       ).length;
       bookingTrends.push({ date: dateStr, count });
     }
@@ -256,7 +256,7 @@ export class AiService {
       },
       include: { service: true },
     });
-    bookingsWithServices.forEach((b) => {
+    bookingsWithServices.forEach((b: { service: { name: string } | null; totalAmount: number }) => {
       if (b.service) {
         serviceRevenue.set(
           b.service.name,
